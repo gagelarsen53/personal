@@ -1,0 +1,25 @@
+#!/bin/bash
+# This will search for a specified file
+# The first argument is the item you are looking for
+
+if [ $# -eq 0 ]
+  then
+    echo -e "Usage: whereis [Item to look for]\n"
+fi
+
+if [ $# -gt 1 ]
+  then
+    echo -e "Too many args...\n"
+fi
+
+if [[ -z $(find . | grep "$1") ]]
+  then
+    echo "There is no entry found for $1"
+fi
+
+
+if [ $# -eq 1 ] 
+  then
+    echo  | find . | grep "$1"
+    echo  ""
+fi
