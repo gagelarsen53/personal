@@ -14,12 +14,8 @@ fi
 
 if [[ -z $(find . | grep "$1") ]]
   then
-    echo "There is no entry found for $1"
-fi
-
-
-if [ $# -eq 1 ] 
-  then
+    echo -e "There is no entry found for $1\n"
+else
     echo  | find . | grep "$1"
     echo  ""
 fi
