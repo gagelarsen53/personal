@@ -14,5 +14,4 @@ elif [[ -z $(find . | grep "$1") ]]
     echo -e "There is no entry found for $1\n"
 else
     echo  | find . | grep "$1"
-    echo  ""
 fi
