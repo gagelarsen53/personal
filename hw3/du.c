@@ -87,6 +87,7 @@ void readDirRec(const char* _dirName) {
   struct dirent* item;
   const char* item_name;
   item = readdir(curDir);
+  char* newDirName;
   while ( item != NULL ) {
     if (strcmp(item->d_name, "..") != 0 && strcmp(item->d_name, ".") != 0) {
       char filename[MAXLENGTH];
@@ -102,14 +103,23 @@ void readDirRec(const char* _dirName) {
       char* newSize;
       PrintToString((long long)statbuf.st_size);
       // printf("%5jd\n", (intmax_t)statbuf.st_size);
-      printf(" %s/%s\n", _dirName, item_name);
-      snprintf(newPath, MAXLENGTH, "%s/%s", _dirName, item_name);
+      if (_dirName == ".") {
+        printf(" %s\n", item_name);
+        snprintf(newPath, MAXLENGTH, "%s", item_name);
+      } else {
+        printf(" %s/%s\n", _dirName, item_name);
+        snprintf(newPath, MAXLENGTH, "%s/%s", _dirName, item_name);
+      }
       readDirRec(newPath);
     } else {
       char* newSize;
       PrintToString((long long)statbuf.st_size);
       // printf("%5jd\n", (intmax_t)statbuf.st_size);
-      printf(" %s/%s\n", _dirName, item_name);
+      if (_dirName == ".") {
+        printf(" %s\n", item_name);
+      } else {
+        printf(" %s/%s\n", _dirName, item_name);
+      }
     }
     item = readdir(curDir);
   }
