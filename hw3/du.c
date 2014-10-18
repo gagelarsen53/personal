@@ -1,6 +1,9 @@
+// Copyright 2014 Gage Larsen
 #include <stdio.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
@@ -9,7 +12,7 @@
 //-----------------------------------------------------------
 // CONSTANTS
 //-----------------------------------------------------------
-size_t MAXLENGTH=256;
+size_t MAXLENGTH = 256;
 
 
 //-----------------------------------------------------------
@@ -17,35 +20,28 @@ size_t MAXLENGTH=256;
 //-----------------------------------------------------------
 void printArgs(int, char**);
 void readDirRec(const char* _dirName);
-void readDirHelp(const char* _dirName);
+char* convToString(int _size);
 
 //-----------------------------------------------------------
 // MAIN
 //-----------------------------------------------------------
-int main(int argc, char** argv)
-{
-  printArgs(argc, argv);
+int main(int argc, char** argv) {
+  // printArgs(argc, argv);
+  char* startDir;
+  if ( argc == 1 ) {
+    startDir =  ".";
+  } else {
+     startDir = *++argv;
+  }
 
-  if( argc == 1 ){
-    printf("No Args\n");
-    char cwd[MAXLENGTH];
-    if( getcwd(cwd, MAXLENGTH) != NULL ){
-      printf("Current Working Directory: %s\n", cwd);
-    }else{
-      perror("getcwd error");
-    }
+  struct stat statbuf;
+  stat(startDir, &statbuf);
+  printf("%5lld %s\n", (long long)statbuf.st_size, startDir);
 
-    //char* startDir = cwd;
-    char* startDir = ".";
-    if( startDir != NULL ){
-      printf("Directory Opened\n");
-      readDirRec(startDir);
-    }else{
-      perror("Directory could not be openend\n");
-    }
-
-  }else{
-    printf("Args\n");
+  if ( startDir != NULL ) {
+    readDirRec(startDir);
+  } else {
+    perror("Directory could not be openend\n");
   }
   return 0;
 }
@@ -53,81 +49,65 @@ int main(int argc, char** argv)
 //-----------------------------------------------------------
 // FUNCTIONS
 //-----------------------------------------------------------
-void printArgs(int _argc, char** _argv){
-  while (--_argc){
+void printArgs(int _argc, char** _argv) {
+  while (--_argc) {
     printf("Arg: %s\n", *++_argv);
   }
-  printf("All Done\n");
+  printf("All Done\n\n");
 }
 
-void readDirRec(const char* _dirName){
-  DIR *curDir;
-  curDir = opendir(_dirName);
-
-  //Check Directory is Opened
-  if( curDir == NULL ){
-    printf("Cannot open directory: %s\n", _dirName);
-    exit(EXIT_FAILURE);
+char* convToString(int _size) {
+  int newSize;
+  char* stringSize;
+  if ( _size > 100000 ) {
+    newSize = _size / 1024;
+    sprintf(stringSize, "%4dK", newSize);
+  } else {
+    newSize = _size;
+    sprintf(stringSize, "%5d", newSize);
   }
-
-  //Work with Directory
-  struct dirent* item;
-  const char* item_name;
-  while(1){
-    item = readdir(curDir);
-    if( item == NULL ){
-      break;
-    }
-    item_name = item->d_name;
-    if( item->d_type == DT_DIR ){
-      if(strcmp(item_name, "..") != 0 && strcmp(item_name, ".") != 0){
-        printf("%s\n", item_name);
-        char newPath[MAXLENGTH];
-        snprintf(newPath, MAXLENGTH, "%s", item_name);
-        readDirHelp(newPath);
-      }
-    }else{
-      printf("%s\n", item_name);
-    }
-  }
-  if(closedir(curDir)){
-    printf("Could not Close: %s\n", _dirName);
-    exit(EXIT_FAILURE);
-  }
-
+  return stringSize;
 }
 
-void readDirHelp(const char* _dirName){
-  DIR *curDir;
-  curDir = opendir(_dirName);
 
-  //Check Directory is Opened
-  if( curDir == NULL ){
-    printf("Cannot open directory: %s\n", _dirName);
+
+void readDirRec(const char* _dirName) {
+  DIR *curDir;
+  struct stat statbuf;
+  curDir = opendir(_dirName);
+  // Check Directory is Opened
+  if ( curDir == NULL ) {
+   //  printf("Cannot open directory: %s\n", _dirName);
     exit(EXIT_FAILURE);
   }
 
-  //Work with Directory
+  // Work with Directory
   struct dirent* item;
   const char* item_name;
-  while(1){
-    item = readdir(curDir);
-    if( item == NULL ){
-      break;
+  item = readdir(curDir);
+  while ( item != NULL ) {
+    if (strcmp(item->d_name, "..") != 0 && strcmp(item->d_name, ".") != 0) {
+      char filename[MAXLENGTH];
+      snprintf(filename, MAXLENGTH, "%s/%s", _dirName, item->d_name);
+      stat(filename, &statbuf);
+    } else {
+      item = readdir(curDir);
+      continue;
     }
     item_name = item->d_name;
-    if( item->d_type == DT_DIR ){
-      if(strcmp(item_name, "..") != 0 && strcmp(item_name, ".") != 0){
-        printf("%s/%s\n", _dirName, item_name);
-        char newPath[MAXLENGTH];
-        snprintf(newPath, MAXLENGTH, "%s/%s", _dirName, item_name);
-        readDirHelp(newPath);
-      }
-    }else{
-      printf("%s/%s\n", _dirName, item_name);
+    if ( item->d_type == DT_DIR ) {
+      char newPath[MAXLENGTH];
+      // printf("%5jd\n", (intmax_t)statbuf.st_size);
+      printf("%5s %s/%s\n", convToString((int)statbuf.st_size), _dirName, item_name);
+      snprintf(newPath, MAXLENGTH, "%s/%s", _dirName, item_name);
+      readDirRec(newPath);
+    } else {
+      // printf("%5jd\n", (intmax_t)statbuf.st_size);
+      printf("%5lld %s/%s\n", (long long)statbuf.st_size, _dirName, item_name);
     }
+    item = readdir(curDir);
   }
-  if(closedir(curDir)){
+  if (closedir(curDir)) {
     printf("Could not Close: %s\n", _dirName);
     exit(EXIT_FAILURE);
   }
