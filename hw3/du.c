@@ -20,7 +20,7 @@ size_t MAXLENGTH = 256;
 //-----------------------------------------------------------
 void printArgs(int, char**);
 void readDirRec(const char* _dirName);
-char* convToString(int _size);
+void PrintToString(long long _size);
 
 //-----------------------------------------------------------
 // MAIN
@@ -36,7 +36,8 @@ int main(int argc, char** argv) {
 
   struct stat statbuf;
   stat(startDir, &statbuf);
-  printf("%5lld %s\n", (long long)statbuf.st_size, startDir);
+  PrintToString((long long)statbuf.st_size);
+  printf(" %s\n", startDir);
 
   if ( startDir != NULL ) {
     readDirRec(startDir);
@@ -56,17 +57,18 @@ void printArgs(int _argc, char** _argv) {
   printf("All Done\n\n");
 }
 
-char* convToString(int _size) {
-  int newSize;
-  char* stringSize;
+void PrintToString(long long _size) {
+  int newSize = 0;
+  char stringSize[MAXLENGTH];
   if ( _size > 100000 ) {
     newSize = _size / 1024;
-    sprintf(stringSize, "%4dK", newSize);
+    snprintf(stringSize, MAXLENGTH, "%dK", newSize);
   } else {
     newSize = _size;
-    sprintf(stringSize, "%5d", newSize);
+    snprintf(stringSize, MAXLENGTH, "%d", newSize);
   }
-  return stringSize;
+  // snprintf(stringSize, MAXLENGTH, "%d", newSize);
+  printf("%5s", stringSize);
 }
 
 
@@ -77,7 +79,7 @@ void readDirRec(const char* _dirName) {
   curDir = opendir(_dirName);
   // Check Directory is Opened
   if ( curDir == NULL ) {
-   //  printf("Cannot open directory: %s\n", _dirName);
+    //  printf("Cannot open directory: %s\n", _dirName);
     exit(EXIT_FAILURE);
   }
 
@@ -97,13 +99,17 @@ void readDirRec(const char* _dirName) {
     item_name = item->d_name;
     if ( item->d_type == DT_DIR ) {
       char newPath[MAXLENGTH];
+      char* newSize;
+      PrintToString((long long)statbuf.st_size);
       // printf("%5jd\n", (intmax_t)statbuf.st_size);
-      printf("%5s %s/%s\n", convToString((int)statbuf.st_size), _dirName, item_name);
+      printf(" %s/%s\n", _dirName, item_name);
       snprintf(newPath, MAXLENGTH, "%s/%s", _dirName, item_name);
       readDirRec(newPath);
     } else {
+      char* newSize;
+      PrintToString((long long)statbuf.st_size);
       // printf("%5jd\n", (intmax_t)statbuf.st_size);
-      printf("%5lld %s/%s\n", (long long)statbuf.st_size, _dirName, item_name);
+      printf(" %s/%s\n", _dirName, item_name);
     }
     item = readdir(curDir);
   }
